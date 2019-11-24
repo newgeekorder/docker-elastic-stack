@@ -1,0 +1,78 @@
+version: '2.1'
+
+services:
+
+  elasticsearch:
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - elk
+      
+  kibana:
+    build:
+      context: kibana/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - ./kibana/config/:/usr/share/kibana/config:ro
+    ports:
+      - "5601:5601"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+
+#  filebeat:
+#    build:
+#      context: filebeat/
+#      args:
+#        ELK_VERSION: $ELK_VERSION
+    #depends_on:
+    #  - proxy_dep
+#    volumes:
+#      - filebeat:/usr/share/filebeat/data
+#      - ./filebeat/filebeat.yml:/usr/share/filebeat/config/filebeat.yml # map the expected location to my config file
+#     - ./filebeat/pipeline:/usr/share/filebeat/pipeline:ro
+      
+     # This is needed for filebeat to load logs from logapi's shared volume
+#      - logapi-vol:/usr/share/filebeat/logapi/logs:ro
+#    environment:
+#      - BEAT_STRICT_PERMS=false # disable strict permission checks
+#      - ES_HOST=elasticsearch
+#      - ES_PORT=9200
+#      - ES_USER=beats
+#      - ES_PASS=testing
+#      - KIBANA_HOST=kibana
+#      - KIBANA_PORT=5601    
+#    networks:
+#      - elk
+#    depends_on:
+#      - elasticsearch
+#      - kibana
+  # This is a proxy used to block beats until all services are healthy.
+  # See: https://github.com/docker/compose/issues/4369
+  #proxy_dep:
+  #  image: busybox
+  #  depends_on:
+  #    elasticsearch: { condition: service_healthy }
+  #    kibana:        { condition: service_healthy }
+
+networks:
+  elk:
+    driver: bridge
+
+volumes:
+  #elk-vol:
+  #log  external: true
+  filebeat:
+  logapi-vol:
